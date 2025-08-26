@@ -67,6 +67,8 @@
     "luxon": "^3.7.1",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "vue": "^3.5.20"
   },
   "hotHook": {
