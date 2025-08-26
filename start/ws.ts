@@ -1,7 +1,9 @@
-// start/socket.ts
 import { Server } from 'socket.io'
 import app from '@adonisjs/core/services/app'
 import server from '@adonisjs/core/services/server'
+
+let sessions: Record<string, string[]> = {} // roomId -> guests
+let currentProgram: string | null = null
 
 app.ready(() => {
   const io = new Server(server.getNodeServer(), {
@@ -9,23 +11,64 @@ app.ready(() => {
   })
 
   io.on('connection', (socket) => {
-    console.log('Socket connecté', socket.id)
+    console.log('[SIGNAL] connected', socket.id)
 
-    socket.on('join', (roomId) => {
-      socket.join(roomId)
-      console.log(`${socket.id} a rejoint la room ${roomId}`)
+    // Guest joins a room
+    socket.on('joinRoom', (roomId: string) => {
+      sessions[roomId] = sessions[roomId] || []
+      if (!sessions[roomId].includes(socket.id)) sessions[roomId].push(socket.id)
+      socket.data.role = 'guest'
+      socket.data.roomId = roomId
+      console.log('[SIGNAL] guest', socket.id, 'joined', roomId)
+
+      if (currentProgram === roomId) {
+        io.to('obs').emit('newGuest', socket.id)
+      }
     })
 
-    socket.on('offer', ({ roomId, offer }) => {
-      socket.to(roomId).emit('offer', { sender: socket.id, offer })
+    // OBS joins
+    socket.on('joinObs', () => {
+      socket.join('obs')
+      socket.data.role = 'obs'
+      socket.data.roomId = null
+      console.log('[SIGNAL] OBS connected', socket.id)
+
+      const guests = currentProgram ? sessions[currentProgram] || [] : []
+      socket.emit('switchProgram', currentProgram, guests)
     })
 
-    socket.on('answer', ({ roomId, answer }) => {
-      socket.to(roomId).emit('answer', { sender: socket.id, answer })
+    // Admin switches program
+    socket.on('switchProgram', (roomId: string | null) => {
+      currentProgram = roomId
+      console.log('[SIGNAL] program switched to', currentProgram)
+      const guests = currentProgram ? sessions[currentProgram] || [] : []
+      io.to('obs').emit('switchProgram', currentProgram, guests)
     })
 
-    socket.on('ice-candidate', ({ roomId, candidate }) => {
-      socket.to(roomId).emit('ice-candidate', { sender: socket.id, candidate })
+    // Offer from OBS -> Guest
+    socket.on('offer', ({ to, sdp }) => {
+      io.to(to).emit('offer', { from: socket.id, sdp })
+    })
+
+    // Answer from Guest -> OBS
+    socket.on('answer', ({ to, sdp }) => {
+      io.to(to).emit('answer', { from: socket.id, sdp })
+    })
+
+    // ICE candidate relay
+    socket.on('ice-candidate', ({ to, candidate }) => {
+      // console.log('[SIGNAL] ICE candidate relay from', socket.id, 'to', to, 'type:', candidate?.type) // Trop verbeux
+      io.to(to).emit('ice-candidate', { from: socket.id, candidate })
+    })
+
+    // disconnect cleanup
+    socket.on('disconnect', () => {
+      const roomId = socket.data.roomId
+      if (roomId && sessions[roomId]) {
+        sessions[roomId] = sessions[roomId].filter((id) => id !== socket.id)
+        io.to('obs').emit('guestLeft', socket.id)
+      }
+      console.log('[SIGNAL] disconnected', socket.id)
     })
   })
 })

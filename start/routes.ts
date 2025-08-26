@@ -8,15 +8,18 @@
 */
 
 import router from '@adonisjs/core/services/router'
-import { HttpContext } from '@adonisjs/core/http'
-router.on('/').renderInertia('home')
 
-// page invité
-router.get('/rooms/:roomId/guest', ({ params, inertia }: HttpContext) => {
+// Guest (player) — room spécifique
+router.get('/rooms/:roomId/guest', ({ params, inertia }) => {
   return inertia.render('guest', { roomId: params.roomId })
 })
 
-// page OBS
-router.get('/rooms/:roomId/obs', ({ params, inertia }: HttpContext) => {
-  return inertia.render('obs', { roomId: params.roomId })
+// OBS — URL fixe (la source navigateur OBS doit pointer sur /obs)
+router.get('/obs', ({ inertia }) => {
+  return inertia.render('obs')
+})
+
+// Admin — URL fixe (panel de production, bouton switch)
+router.get('/admin', ({ inertia }) => {
+  return inertia.render('admin')
 })
