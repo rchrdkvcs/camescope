@@ -9,17 +9,29 @@
 
 import router from '@adonisjs/core/services/router'
 
-// Guest (player) — room spécifique
+// Pages principales
 router.get('/rooms/:roomId/guest', ({ params, inertia }) => {
   return inertia.render('guest', { roomId: params.roomId })
 })
 
-// OBS — URL fixe (la source navigateur OBS doit pointer sur /obs)
 router.get('/obs', ({ inertia }) => {
   return inertia.render('obs')
 })
 
-// Admin — URL fixe (panel de production, bouton switch)
 router.get('/admin', ({ inertia }) => {
   return inertia.render('admin')
 })
+
+// API Routes
+router
+  .group(() => {
+    // Sessions API
+    router.resource('sessions', '#controllers/sessions_controller').apiOnly()
+    router.post('sessions/:id/start', '#controllers/sessions_controller.start')
+    router.post('sessions/:id/finish', '#controllers/sessions_controller.finish')
+
+    // Layouts API
+    router.resource('layouts', '#controllers/layouts_controller').apiOnly()
+    router.post('layouts/:id/duplicate', '#controllers/layouts_controller.duplicate')
+  })
+  .prefix('/api')

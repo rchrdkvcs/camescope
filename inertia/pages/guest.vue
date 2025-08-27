@@ -22,7 +22,10 @@ const logs = ref([])
 const pcs = {}
 
 function log(...args) {
-  logs.value.push(`[${new Date().toLocaleTimeString()}] ${args.join(' ')}`)
+  if (process.env.NODE_ENV === 'development') {
+    logs.value.push(`[${new Date().toLocaleTimeString()}] ${args.join(' ')}`)
+    console.log('[GUEST]', ...args)
+  }
 }
 
 let localStream = null

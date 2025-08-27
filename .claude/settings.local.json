@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "additionalDirectories": [
+      "C:\\c\\Users\\B34R\\Desktop\\Lab"
+    ],
+    "allow": [
+      "Bash(node ace make:migration:*)"
+    ]
+  }
+}
