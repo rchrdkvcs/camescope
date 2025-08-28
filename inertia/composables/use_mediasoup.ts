@@ -3,7 +3,7 @@ import type { Transport, Producer, Consumer } from 'mediasoup-client/types'
 import { socket } from '~/composables/use_socket'
 
 class MediasoupClient {
-  private device = new Device()
+  private device: Device | null = null
   private sendTransport: Transport | null = null
   private recvTransport: Transport | null = null
   private producers = new Map<string, Producer>()
@@ -11,7 +11,10 @@ class MediasoupClient {
   private isInitialized = false
 
   async init(): Promise<void> {
-    if (this.isInitialized) return
+    if (this.isInitialized && this.device) return
+
+    // Create new device instance
+    this.device = new Device()
 
     // Get router capabilities
     const { rtpCapabilities } = await this.socketRequest('getRouterRtpCapabilities')
@@ -31,6 +34,8 @@ class MediasoupClient {
   }
 
   async produce(stream: MediaStream): Promise<Producer> {
+    if (!this.device) throw new Error('Device not initialized')
+    
     if (!this.sendTransport) {
       await this.createSendTransport()
     }
@@ -45,6 +50,8 @@ class MediasoupClient {
   }
 
   async consume(producerId: string): Promise<{ consumer: Consumer; stream: MediaStream }> {
+    if (!this.device) throw new Error('Device not initialized')
+    
     // Ensure we have receive transport
     if (!this.recvTransport) {
       await this.createRecvTransport()
@@ -64,6 +71,8 @@ class MediasoupClient {
   }
 
   private async createSendTransport(): Promise<void> {
+    if (!this.device) throw new Error('Device not initialized')
+    
     const transportOptions = await this.socketRequest('createWebRtcTransport')
     this.sendTransport = this.device.createSendTransport(transportOptions)
 
@@ -94,6 +103,8 @@ class MediasoupClient {
   }
 
   private async createRecvTransport(): Promise<void> {
+    if (!this.device) throw new Error('Device not initialized')
+    
     const transportOptions = await this.socketRequest('createWebRtcTransport')
     this.recvTransport = this.device.createRecvTransport(transportOptions)
 
@@ -151,6 +162,7 @@ class MediasoupClient {
     this.consumers.clear()
     this.sendTransport = null
     this.recvTransport = null
+    this.device = null
     this.isInitialized = false
   }
 

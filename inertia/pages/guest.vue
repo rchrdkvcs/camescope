@@ -7,24 +7,50 @@ const props = defineProps(['roomId'])
 const video = ref()
 const status = ref('Ready')
 const streaming = ref(false)
+const previewing = ref(false)
 
 let stream = null
 
-async function start() {
+async function getCamera() {
+  if (stream) {
+    stream.getTracks().forEach((track) => track.stop())
+    stream = null
+  }
+
+  stream = await navigator.mediaDevices.getUserMedia({
+    video: {
+      width: { ideal: 1920, min: 1280 },
+      height: { ideal: 1080, min: 720 },
+      aspectRatio: { exact: 16 / 9 },
+    },
+    audio: false,
+  })
+  video.value.srcObject = stream
+}
+
+async function preview() {
   try {
     status.value = 'Getting camera...'
+    await getCamera()
+    previewing.value = true
+    status.value = 'Preview'
+  } catch (error) {
+    status.value = 'Error: ' + error.message
+  }
+}
 
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        width: { ideal: 1920, min: 1280 },
-        height: { ideal: 1080, min: 720 },
-        aspectRatio: { exact: 16 / 9 },
-      },
-      audio: false,
-    })
-    video.value.srcObject = stream
+async function start() {
+  try {
+    if (!stream) {
+      status.value = 'Getting camera...'
+      await getCamera()
+    }
 
+    previewing.value = true
     status.value = 'Connecting...'
+
+    // Reset mediasoup state
+    mediasoup.cleanup()
     await mediasoup.init()
     await mediasoup.joinRoom(props.roomId)
 
@@ -46,7 +72,8 @@ function stop() {
 
   mediasoup.cleanup()
   streaming.value = false
-  status.value = 'Stopped'
+  previewing.value = false
+  status.value = 'Ready'
 }
 
 onBeforeUnmount(() => {
@@ -74,7 +101,7 @@ onBeforeUnmount(() => {
     <div class="grid grid-cols-3 w-full gap-8">
       <div class="col-span-2 flex flex-col items-center justify-center gap-4 w-full">
         <div
-          v-if="!streaming"
+          v-if="!previewing && !streaming"
           class="bg-elevated/50 rounded-lg w-full aspect-video flex flex-col items-center justify-center gap-6"
         >
           <UIcon class="size-24 text-muted" name="lucide:baby" />
@@ -82,7 +109,7 @@ onBeforeUnmount(() => {
         </div>
         <video
           ref="video"
-          :class="streaming ? '' : 'hidden'"
+          :class="previewing || streaming ? '' : 'hidden'"
           autoplay
           class="w-full aspect-video rounded-lg"
           muted
@@ -117,27 +144,33 @@ onBeforeUnmount(() => {
     <div class="w-full flex justify-center gap-4">
       <UButton
         v-if="!streaming"
-        color="success"
-        icon="lucide:camera"
-        label="Commencer le partage"
+        icon="lucide:video"
+        label="Démarrer le partage"
         size="xl"
         variant="solid"
         @click="start"
       />
       <UButton
-        v-if="!streaming"
+        v-if="!previewing && !streaming"
         color="neutral"
         icon="lucide:eye"
-        label="Previsualiser"
         size="xl"
         variant="subtle"
-        @click="start"
+        @click="preview"
       />
       <UButton
-        v-else-if="streaming"
+        v-if="streaming"
         color="error"
         icon="lucide:stop-circle"
         label="Arrêter le partage"
+        size="xl"
+        variant="solid"
+        @click="stop"
+      />
+      <UButton
+        v-if="previewing && !streaming"
+        color="neutral"
+        icon="lucide:eye-off"
         size="xl"
         variant="subtle"
         @click="stop"
