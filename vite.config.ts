@@ -14,6 +14,17 @@ export default defineConfig({
     tailwindcss(),
     ui({
       inertia: true,
+      ui: {
+        colors: {
+          primary: 'blue',
+          neutral: 'zinc',
+        },
+        button: {
+          slots: {
+            base: 'cursor-pointer',
+          },
+        },
+      },
     }),
   ],
 
