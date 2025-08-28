@@ -1,6 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import TournamentSession from '#models/tournament_session'
-import Layout from '#models/layout'
 import { randomUUID } from 'node:crypto'
 import { DateTime } from 'luxon'
 
@@ -35,13 +34,13 @@ export default class SessionsController {
   async store({ request, response }: HttpContext) {
     try {
       const data = request.only(['name', 'description', 'maxParticipants'])
-      
+
       console.log('Data received:', data)
 
       // Générer UUID et slug
       const roomId = randomUUID()
       const roomSlug = this.generateSlug(data.name)
-      
+
       console.log('Generated roomId:', roomId, 'roomSlug:', roomSlug)
 
       // Vérifier l'unicité du slug
@@ -63,25 +62,33 @@ export default class SessionsController {
         status: 'draft' as const,
         currentParticipants: 0,
       }
-      
+
       console.log('Creating session with data:', sessionData)
 
       const session = await TournamentSession.create(sessionData)
-      
+
       console.log('Created session:', session.toJSON())
 
       return response.status(201).json(session)
     } catch (error) {
       console.error('Error creating session:', error)
-      return response.status(500).json({ error: 'Erreur lors de la création de la session', details: error.message })
+      return response
+        .status(500)
+        .json({ error: 'Erreur lors de la création de la session', details: error.message })
     }
   }
 
   async update({ params, request, response }: HttpContext) {
     try {
       const session = await TournamentSession.findOrFail(params.id)
-      const data = request.only(['name', 'description', 'status', 'maxParticipants', 'currentLayoutId'])
-      
+      const data = request.only([
+        'name',
+        'description',
+        'status',
+        'maxParticipants',
+        'currentLayoutId',
+      ])
+
       session.merge(data)
       await session.save()
       await session.load('currentLayout')
@@ -96,7 +103,7 @@ export default class SessionsController {
     try {
       const session = await TournamentSession.findOrFail(params.id)
       await session.delete()
-      
+
       return response.status(204)
     } catch (error) {
       return response.status(500).json({ error: 'Erreur lors de la suppression de la session' })
@@ -106,9 +113,11 @@ export default class SessionsController {
   async start({ params, response }: HttpContext) {
     try {
       const session = await TournamentSession.findOrFail(params.id)
-      
+
       if (session.status !== 'draft') {
-        return response.status(400).json({ error: 'Seules les sessions en brouillon peuvent être démarrées' })
+        return response
+          .status(400)
+          .json({ error: 'Seules les sessions en brouillon peuvent être démarrées' })
       }
 
       session.status = 'active'
@@ -124,9 +133,11 @@ export default class SessionsController {
   async finish({ params, response }: HttpContext) {
     try {
       const session = await TournamentSession.findOrFail(params.id)
-      
+
       if (session.status !== 'active') {
-        return response.status(400).json({ error: 'Seules les sessions actives peuvent être terminées' })
+        return response
+          .status(400)
+          .json({ error: 'Seules les sessions actives peuvent être terminées' })
       }
 
       session.status = 'finished'
@@ -143,7 +154,7 @@ export default class SessionsController {
     if (!name || typeof name !== 'string') {
       return 'session-' + Date.now()
     }
-    
+
     const slug = name
       .toLowerCase()
       .normalize('NFD')
@@ -152,7 +163,7 @@ export default class SessionsController {
       .replace(/\s+/g, '-') // Remplacer les espaces par des tirets
       .replace(/-+/g, '-') // Supprimer les tirets multiples
       .replace(/^-+|-+$/g, '') // Supprimer les tirets en début/fin
-      
+
     return slug || `session-${Date.now()}`
   }
 }

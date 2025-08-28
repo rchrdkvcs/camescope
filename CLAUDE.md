@@ -79,3 +79,4 @@ Frontend uses Vite alias: `~/` → `./inertia/`
 6. Direct peer-to-peer video streaming established
 
 The application manages multiple guest connections per room with dynamic program switching controlled by admin panel.
+- Je lance toujours le serveur de developpement a la main
