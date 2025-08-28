@@ -11,7 +11,12 @@ export default class extends BaseSchema {
       table.enum('type', ['preset', 'custom']).defaultTo('preset')
       table.json('config').notNullable()
       table.boolean('is_default').defaultTo(false)
-      table.integer('session_id').unsigned().references('id').inTable('tournament_sessions').nullable()
+      table
+        .integer('session_id')
+        .unsigned()
+        .references('id')
+        .inTable('tournament_sessions')
+        .nullable()
 
       table.timestamp('created_at')
       table.timestamp('updated_at')

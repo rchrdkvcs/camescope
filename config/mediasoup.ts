@@ -18,7 +18,7 @@ export default {
       'score',
       'simulcast',
       'svc',
-      'sctp'
+      'sctp',
     ] as WorkerLogTag[],
   },
 

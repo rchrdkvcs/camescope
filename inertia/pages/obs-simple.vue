@@ -1,36 +1,27 @@
 <template>
   <div class="obs-page">
     <h1>📺 OBS Viewer</h1>
-    
+
     <div class="status">{{ status }}</div>
-    
+
     <div class="program-info">
       <strong>Program:</strong> {{ currentProgram || 'None selected' }}
       <span v-if="videoCount > 0">({{ videoCount }} feeds)</span>
     </div>
-    
+
     <div class="videos" v-if="videoCount > 0">
-      <div 
-        v-for="(streamData, producerId) in streams" 
-        :key="producerId"
-        class="video-item"
-      >
-        <video 
-          :ref="el => setVideoRef(producerId, el)"
-          autoplay 
-          playsinline 
-          muted
-        ></video>
+      <div v-for="(streamData, producerId) in streams" :key="producerId" class="video-item">
+        <video :ref="(el) => setVideoRef(producerId, el)" autoplay playsinline muted></video>
         <div class="video-label">{{ producerId.slice(-8) }}</div>
       </div>
     </div>
-    
+
     <div v-else class="no-feeds">
       <div class="icon">📷</div>
       <p>No live feeds</p>
       <small>Waiting for admin to select a program...</small>
     </div>
-    
+
     <div class="logs">
       <div v-for="log in logs" :key="log">{{ log }}</div>
     </div>
@@ -52,7 +43,6 @@ const videoCount = computed(() => Object.keys(streams.value).length)
 function log(...args) {
   const msg = `[${new Date().toLocaleTimeString()}] ${args.join(' ')}`
   logs.value.push(msg)
-  console.log('[OBS]', ...args)
 }
 
 function setVideoRef(producerId, el) {
@@ -63,10 +53,9 @@ async function init() {
   try {
     await mediasoup.init()
     await mediasoup.joinObs()
-    
+
     status.value = 'Connected - Waiting for program'
     log('OBS connected and ready')
-    
   } catch (error) {
     status.value = 'Error: ' + error.message
     log('Error:', error.message)
@@ -76,11 +65,11 @@ async function init() {
 async function consumeProducer(producerId) {
   try {
     log('Consuming producer:', producerId)
-    
+
     const { consumer, stream } = await mediasoup.consume(producerId)
-    
+
     streams.value[producerId] = { consumer, stream }
-    
+
     // Wait for DOM update then attach stream
     await nextTick()
     const videoEl = videoElements.value[producerId]
@@ -88,7 +77,6 @@ async function consumeProducer(producerId) {
       videoEl.srcObject = stream
       log('Stream attached for:', producerId)
     }
-    
   } catch (error) {
     log('Error consuming:', producerId, error.message)
   }
@@ -99,7 +87,7 @@ function removeConsumer(producerId) {
   if (streamData) {
     const videoEl = videoElements.value[producerId]
     if (videoEl) videoEl.srcObject = null
-    
+
     delete streams.value[producerId]
     delete videoElements.value[producerId]
     log('Removed consumer:', producerId)
@@ -111,10 +99,10 @@ function handleNewProgram(data) {
   log('New program:', data.roomId, 'producers:', data.producers.length)
   currentProgram.value = data.roomId
   status.value = '🔴 Broadcasting: ' + data.roomId
-  
+
   // Clear old streams
   Object.keys(streams.value).forEach(removeConsumer)
-  
+
   // Consume all producers
   data.producers.forEach(consumeProducer)
 }
@@ -123,7 +111,7 @@ function handleExistingProducers(data) {
   log('Existing producers:', data.producers.length)
   currentProgram.value = data.roomId
   status.value = '🔴 Broadcasting: ' + data.roomId
-  
+
   data.producers.forEach(consumeProducer)
 }
 
@@ -136,12 +124,12 @@ function handleNewProducer(data) {
 
 onMounted(() => {
   log('OBS page loaded')
-  
+
   // Setup event listeners
   mediasoup.onNewProgram(handleNewProgram)
   mediasoup.onExistingProducers(handleExistingProducers)
   mediasoup.onNewProducer(handleNewProducer)
-  
+
   init()
 })
 

@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 Development and build commands:
+
 - `npm run dev` - Start the AdonisJS server with HMR enabled for development
 - `npm run build` - Build the application for production
 - `npm start` - Start the production server (requires build first)
@@ -14,6 +15,7 @@ Development and build commands:
 - `npm run typecheck` - Run TypeScript type checking without emitting files
 
 Test suites:
+
 - Unit tests: `tests/unit/**/*.spec(.ts|.js)` (2s timeout)
 - Functional tests: `tests/functional/**/*.spec(.ts|.js)` (30s timeout)
 
@@ -24,17 +26,20 @@ This is a **WebRTC streaming application** built with AdonisJS 6 backend and Vue
 ### Core Components
 
 **Backend (AdonisJS 6):**
+
 - Full-stack Node.js framework with TypeScript
 - Socket.IO server for real-time WebRTC signaling (`start/ws.ts`)
 - Three main routes: `/rooms/:roomId/guest`, `/obs`, `/admin` (`start/routes.ts`)
 - Session-based room management with program switching capability
 
 **Frontend (Vue 3 + Inertia.js):**
+
 - Three distinct views: Guest, OBS Viewer, and Admin Panel
 - WebRTC peer connections for video streaming
 - Socket.IO client integration via `~/composables/use_socket.ts`
 
 **Real-time Architecture:**
+
 - Socket.IO handles WebRTC signaling (offer/answer/ICE candidates)
 - Room-based session management with program switching
 - OBS integration for live streaming production
@@ -52,6 +57,7 @@ This is a **WebRTC streaming application** built with AdonisJS 6 backend and Vue
 ### Import Aliases
 
 The project uses Node.js subpath imports for clean imports:
+
 - `#controllers/*` → `./app/controllers/*.js`
 - `#models/*` → `./app/models/*.js`
 - `#middleware/*` → `./app/middleware/*.js`
@@ -72,11 +78,12 @@ Frontend uses Vite alias: `~/` → `./inertia/`
 ### WebRTC Flow
 
 1. **Guest** joins room via `/rooms/:roomId/guest` → emits `joinRoom`
-2. **Admin** switches program via `/admin` → emits `switchProgram` 
+2. **Admin** switches program via `/admin` → emits `switchProgram`
 3. **OBS** connects via `/obs` → receives guest list for current program
 4. WebRTC negotiation: OBS creates offers → Guests respond with answers
 5. ICE candidates exchanged for NAT traversal
 6. Direct peer-to-peer video streaming established
 
 The application manages multiple guest connections per room with dynamic program switching controlled by admin panel.
+
 - Je lance toujours le serveur de developpement a la main

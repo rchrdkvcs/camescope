@@ -15,12 +15,11 @@ class MediasoupClient {
 
     // Get router capabilities
     const { rtpCapabilities } = await this.socketRequest('getRouterRtpCapabilities')
-    
+
     // Load device
     await this.device.load({ routerRtpCapabilities: rtpCapabilities })
-    
+
     this.isInitialized = true
-    console.log('✅ MediaSoup initialized')
   }
 
   async joinRoom(roomId: string) {
@@ -41,31 +40,26 @@ class MediasoupClient {
 
     const producer = await this.sendTransport!.produce({ track: videoTrack })
     this.producers.set(producer.id, producer)
-    
-    console.log('🎬 Producer created:', producer.id)
+
     return producer
   }
 
-  async consume(producerId: string): Promise<{ consumer: Consumer, stream: MediaStream }> {
+  async consume(producerId: string): Promise<{ consumer: Consumer; stream: MediaStream }> {
     // Ensure we have receive transport
     if (!this.recvTransport) {
-      console.log('Creating recv transport for consumer')
       await this.createRecvTransport()
     }
 
-    console.log('Requesting consume for producer:', producerId)
     const consumerOptions = await this.socketRequest('consume', {
       producerId,
-      rtpCapabilities: this.device.rtpCapabilities
+      rtpCapabilities: this.device.rtpCapabilities,
     })
 
-    console.log('Got consumer options:', consumerOptions)
     const consumer = await this.recvTransport!.consume(consumerOptions)
     this.consumers.set(consumer.id, consumer)
 
     const stream = new MediaStream([consumer.track])
-    
-    console.log('🍿 Consumer created:', consumer.id, 'track ready:', !!consumer.track)
+
     return { consumer, stream }
   }
 
@@ -77,7 +71,7 @@ class MediasoupClient {
       try {
         await this.socketRequest('connectWebRtcTransport', {
           transportId: this.sendTransport!.id,
-          dtlsParameters
+          dtlsParameters,
         })
         callback()
       } catch (error) {
@@ -90,7 +84,7 @@ class MediasoupClient {
         const { id } = await this.socketRequest('produce', {
           transportId: this.sendTransport!.id,
           kind,
-          rtpParameters
+          rtpParameters,
         })
         callback({ id })
       } catch (error) {
@@ -107,7 +101,7 @@ class MediasoupClient {
       try {
         await this.socketRequest('connectWebRtcTransport', {
           transportId: this.recvTransport!.id,
-          dtlsParameters
+          dtlsParameters,
         })
         callback()
       } catch (error) {
@@ -148,21 +142,21 @@ class MediasoupClient {
   }
 
   cleanup(): void {
-    this.producers.forEach(producer => producer.close())
-    this.consumers.forEach(consumer => consumer.close())
+    this.producers.forEach((producer) => producer.close())
+    this.consumers.forEach((consumer) => consumer.close())
     this.sendTransport?.close()
     this.recvTransport?.close()
-    
+
     this.producers.clear()
     this.consumers.clear()
     this.sendTransport = null
     this.recvTransport = null
     this.isInitialized = false
-    
-    console.log('🧹 Cleanup done')
   }
 
-  get ready() { return this.isInitialized }
+  get ready() {
+    return this.isInitialized
+  }
 }
 
 const mediasoup = new MediasoupClient()

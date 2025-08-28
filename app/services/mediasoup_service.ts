@@ -68,7 +68,7 @@ class MediasoupService {
 
     this.rooms.set(roomId, room)
     this.logger.info(`✅ Room created: ${roomId}`)
-    
+
     return room
   }
 
@@ -141,9 +141,9 @@ class MediasoupService {
     })
 
     room.producers.set(producer.id, producer)
-    
+
     this.logger.info(`🎬 Producer created: ${producer.id} (${kind})`)
-    
+
     return producer.id
   }
 
@@ -159,13 +159,13 @@ class MediasoupService {
         transportData = data // Take the last one found (most recent)
       }
     }
-    
+
     if (!transportData) {
       throw new Error(`No transport found for socket: ${socketId}`)
     }
 
     const { transport, roomId } = transportData
-    
+
     // Find producer in any room (for cross-room consumption)
     let producer: mediasoupTypes.Producer | null = null
     let producerRoom: RoomData | null = null
@@ -247,17 +247,17 @@ class MediasoupService {
         transportsToClose.push({ transportId, data })
       }
     }
-    
+
     for (const { transportId, data } of transportsToClose) {
       data.transport.close()
       this.transports.delete(transportId)
-      
+
       // Remove from room too
       const room = this.rooms.get(data.roomId)
       if (room) {
         room.transports.delete(transportId)
       }
-      
+
       this.logger.info(`🧹 Transport ${transportId} cleaned up for socket: ${socketId}`)
     }
   }
@@ -306,19 +306,19 @@ class MediasoupService {
 
   async shutdown() {
     this.logger.info('🔴 Shutting down mediasoup service...')
-    
+
     // Close all rooms
     for (const [roomId, room] of this.rooms) {
       room.router.close()
       this.logger.info(`Room closed: ${roomId}`)
     }
-    
+
     // Close worker
     if (this.worker) {
       this.worker.close()
       this.logger.info('Worker closed')
     }
-    
+
     this.rooms.clear()
     this.transports.clear()
   }

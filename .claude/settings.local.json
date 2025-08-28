@@ -1,11 +1,6 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(node ace make:migration:*)",
-      "Bash(bun add:*)"
-    ],
-    "additionalDirectories": [
-      "C:\\c\\Users\\B34R\\Desktop\\Lab"
-    ]
+    "allow": ["Bash(node ace make:migration:*)", "Bash(bun add:*)"],
+    "additionalDirectories": ["C:\\c\\Users\\B34R\\Desktop\\Lab"]
   }
 }

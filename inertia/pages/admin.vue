@@ -1,9 +1,9 @@
 <template>
   <div class="admin-page">
     <h1>⚙️ Admin Panel</h1>
-    
+
     <div class="status">{{ status }}</div>
-    
+
     <div class="current-program">
       <h3>Current Program</h3>
       <div class="program-display">
@@ -11,22 +11,22 @@
         <button @click="stopProgram" v-if="currentProgram" class="stop-btn">Stop</button>
       </div>
     </div>
-    
+
     <div class="rooms-section">
       <h3>Available Rooms</h3>
       <div v-if="rooms.length === 0" class="no-rooms">
         No active rooms found. Guests need to join first.
       </div>
       <div v-else class="rooms-list">
-        <div 
-          v-for="room in rooms" 
+        <div
+          v-for="room in rooms"
           :key="room"
           class="room-item"
           :class="{ active: room === currentProgram }"
         >
           <div class="room-name">📺 Room: {{ room }}</div>
-          <button 
-            @click="switchToRoom(room)" 
+          <button
+            @click="switchToRoom(room)"
             :disabled="room === currentProgram"
             class="switch-btn"
           >
@@ -35,21 +35,15 @@
         </div>
       </div>
     </div>
-    
+
     <div class="manual-switch">
       <h3>Manual Program Switch</h3>
       <div class="switch-controls">
-        <input 
-          v-model="manualRoom" 
-          placeholder="Enter room ID (e.g., room1)"
-          class="room-input"
-        />
-        <button @click="switchToManualRoom" :disabled="!manualRoom">
-          Switch
-        </button>
+        <input v-model="manualRoom" placeholder="Enter room ID (e.g., room1)" class="room-input" />
+        <button @click="switchToManualRoom" :disabled="!manualRoom">Switch</button>
       </div>
     </div>
-    
+
     <div class="logs">
       <div v-for="log in logs" :key="log">{{ log }}</div>
     </div>
@@ -69,7 +63,6 @@ const logs = ref([])
 function log(...args) {
   const msg = `[${new Date().toLocaleTimeString()}] ${args.join(' ')}`
   logs.value.push(msg)
-  console.log('[ADMIN]', ...args)
 }
 
 function switchToRoom(roomId) {
@@ -94,7 +87,7 @@ function stopProgram() {
 function handleConnect() {
   status.value = 'Connected'
   log('Admin connected')
-  
+
   // Join as admin
   socket.emit('joinAdmin')
 }
@@ -113,7 +106,7 @@ function handleProgramSwitched(data) {
 
 function handleProducerAdded(data) {
   log('New producer:', data.producerId, 'in room:', data.roomId)
-  
+
   // Update rooms list if new room
   if (!rooms.value.includes(data.roomId)) {
     rooms.value.push(data.roomId)
@@ -126,14 +119,14 @@ function handlePeerDisconnected(data) {
 
 onMounted(() => {
   log('Admin page loaded')
-  
+
   // Setup socket listeners
   socket.on('connect', handleConnect)
   socket.on('roomsList', handleRoomsList)
   socket.on('programSwitched', handleProgramSwitched)
   socket.on('producerAdded', handleProducerAdded)
   socket.on('peerDisconnected', handlePeerDisconnected)
-  
+
   // Connect if not already
   if (socket.connected) {
     handleConnect()
@@ -147,7 +140,7 @@ onBeforeUnmount(() => {
   socket.off('programSwitched', handleProgramSwitched)
   socket.off('producerAdded', handleProducerAdded)
   socket.off('peerDisconnected', handlePeerDisconnected)
-  
+
   log('Admin cleanup done')
 })
 </script>

@@ -35,13 +35,9 @@ export default class SessionsController {
     try {
       const data = request.only(['name', 'description', 'maxParticipants'])
 
-      console.log('Data received:', data)
-
       // Générer UUID et slug
       const roomId = randomUUID()
       const roomSlug = this.generateSlug(data.name)
-
-      console.log('Generated roomId:', roomId, 'roomSlug:', roomSlug)
 
       // Vérifier l'unicité du slug
       let finalSlug = roomSlug
@@ -50,8 +46,6 @@ export default class SessionsController {
         finalSlug = `${roomSlug}-${counter}`
         counter++
       }
-
-      console.log('Final slug:', finalSlug)
 
       const sessionData = {
         name: data.name,
@@ -63,15 +57,10 @@ export default class SessionsController {
         currentParticipants: 0,
       }
 
-      console.log('Creating session with data:', sessionData)
-
       const session = await TournamentSession.create(sessionData)
-
-      console.log('Created session:', session.toJSON())
 
       return response.status(201).json(session)
     } catch (error) {
-      console.error('Error creating session:', error)
       return response
         .status(500)
         .json({ error: 'Erreur lors de la création de la session', details: error.message })

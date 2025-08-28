@@ -14,9 +14,9 @@ export default class extends BaseSeeder {
         maxCameras: 2,
         positions: [
           { x: 0, y: 0, width: 50, height: 100, zIndex: 1 },
-          { x: 50, y: 0, width: 50, height: 100, zIndex: 1 }
-        ]
-      }
+          { x: 50, y: 0, width: 50, height: 100, zIndex: 1 },
+        ],
+      },
     })
 
     // Layout preset: 5 caméras à gauche, 5 à droite
@@ -39,13 +39,13 @@ export default class extends BaseSeeder {
           { x: 75, y: 20, width: 25, height: 20, zIndex: 1 },
           { x: 75, y: 40, width: 25, height: 20, zIndex: 1 },
           { x: 75, y: 60, width: 25, height: 20, zIndex: 1 },
-          { x: 75, y: 80, width: 25, height: 20, zIndex: 1 }
+          { x: 75, y: 80, width: 25, height: 20, zIndex: 1 },
         ],
         background: {
           type: 'color',
-          value: '#1a1a1a'
-        }
-      }
+          value: '#1a1a1a',
+        },
+      },
     })
 
     // Layout preset: Une caméra principale + 4 petites
@@ -63,9 +63,9 @@ export default class extends BaseSeeder {
           { x: 75, y: 5, width: 20, height: 15, zIndex: 2 },
           { x: 75, y: 25, width: 20, height: 15, zIndex: 2 },
           { x: 75, y: 45, width: 20, height: 15, zIndex: 2 },
-          { x: 75, y: 65, width: 20, height: 15, zIndex: 2 }
-        ]
-      }
+          { x: 75, y: 65, width: 20, height: 15, zIndex: 2 },
+        ],
+      },
     })
 
     // Layout preset: Grille 3x3
@@ -88,9 +88,9 @@ export default class extends BaseSeeder {
           // Ligne 3
           { x: 5, y: 67, width: 28, height: 28, zIndex: 1 },
           { x: 36, y: 67, width: 28, height: 28, zIndex: 1 },
-          { x: 67, y: 67, width: 28, height: 28, zIndex: 1 }
-        ]
-      }
+          { x: 67, y: 67, width: 28, height: 28, zIndex: 1 },
+        ],
+      },
     })
   }
 }

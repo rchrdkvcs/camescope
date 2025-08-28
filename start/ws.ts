@@ -24,7 +24,6 @@ app.ready(async () => {
   })
 
   io.on('connection', (socket) => {
-    console.log(`[WS] Client connected: ${socket.id}`)
     const sessionData: SessionData = {}
 
     // Get router RTP capabilities
@@ -42,16 +41,14 @@ app.ready(async () => {
       sessionData.role = 'guest'
       sessionData.roomId = roomId
       socketRooms.set(socket.id, roomId)
-      
+
       socket.join(roomId)
-      console.log(`[WS] Guest ${socket.id} joined room: ${roomId}`)
     })
 
     // OBS joins
     socket.on('joinObs', () => {
       sessionData.role = 'obs'
       socket.join('obs')
-      console.log(`[WS] OBS ${socket.id} connected`)
 
       // Send existing producers if there's an active program
       if (currentProgram) {
@@ -64,7 +61,6 @@ app.ready(async () => {
     socket.on('joinAdmin', () => {
       sessionData.role = 'admin'
       socket.join('admin')
-      console.log(`[WS] Admin ${socket.id} connected`)
 
       // Send current program info
       const rooms = mediasoupService.getAllRooms()
@@ -79,7 +75,6 @@ app.ready(async () => {
       }
 
       currentProgram = roomId
-      console.log(`[WS] Program switched to: ${roomId}`)
 
       // Notify OBS about program change
       if (roomId) {
@@ -127,13 +122,11 @@ app.ready(async () => {
     // Produce media
     socket.on('produce', async ({ transportId, kind, rtpParameters, appData }, callback) => {
       try {
-        const producerId = await mediasoupService.produce(
-          transportId,
-          kind,
-          rtpParameters,
-          { ...appData, socketId: socket.id }
-        )
-        
+        const producerId = await mediasoupService.produce(transportId, kind, rtpParameters, {
+          ...appData,
+          socketId: socket.id,
+        })
+
         callback({ id: producerId })
 
         // Notify OBS if this producer is from current program
@@ -175,25 +168,32 @@ app.ready(async () => {
     })
 
     // Consume by transport ID (more explicit)
-    socket.on('consumeByTransport', async ({ transportId, producerId, rtpCapabilities }, callback) => {
-      try {
-        // Find the transport data to get socketId
-        let socketIdForTransport = null
-        const transportData = mediasoupService['transports'].get(transportId)
-        if (transportData) {
-          socketIdForTransport = transportData.socketId
+    socket.on(
+      'consumeByTransport',
+      async ({ transportId, producerId, rtpCapabilities }, callback) => {
+        try {
+          // Find the transport data to get socketId
+          let socketIdForTransport = null
+          const transportData = mediasoupService['transports'].get(transportId)
+          if (transportData) {
+            socketIdForTransport = transportData.socketId
+          }
+
+          if (!socketIdForTransport) {
+            throw new Error(`Transport not found: ${transportId}`)
+          }
+
+          const consumerData = await mediasoupService.consume(
+            socketIdForTransport,
+            producerId,
+            rtpCapabilities
+          )
+          callback(consumerData)
+        } catch (error) {
+          callback({ error: error.message })
         }
-        
-        if (!socketIdForTransport) {
-          throw new Error(`Transport not found: ${transportId}`)
-        }
-        
-        const consumerData = await mediasoupService.consume(socketIdForTransport, producerId, rtpCapabilities)
-        callback(consumerData)
-      } catch (error) {
-        callback({ error: error.message })
       }
-    })
+    )
 
     // Pause consumer
     socket.on('pauseConsumer', async ({ consumerId }, callback) => {
@@ -239,11 +239,9 @@ app.ready(async () => {
 
     // Handle disconnect
     socket.on('disconnect', () => {
-      console.log(`[WS] Client disconnected: ${socket.id}`)
-      
       // Cleanup mediasoup resources
       mediasoupService.cleanupSocket(socket.id)
-      
+
       // Remove from tracking maps
       socketRooms.delete(socket.id)
 
@@ -256,20 +254,16 @@ app.ready(async () => {
     })
 
     // Error handling
-    socket.on('error', (error) => {
-      console.error(`[WS] Socket error from ${socket.id}:`, error)
-    })
+    socket.on('error', () => {})
   })
 
   // Graceful shutdown
   process.on('SIGINT', async () => {
-    console.log('[WS] Shutting down gracefully...')
     await mediasoupService.shutdown()
     process.exit(0)
   })
 
   process.on('SIGTERM', async () => {
-    console.log('[WS] Shutting down gracefully...')
     await mediasoupService.shutdown()
     process.exit(0)
   })

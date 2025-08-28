@@ -9,7 +9,6 @@
 
 import router from '@adonisjs/core/services/router'
 
-// Main pages - SIMPLE AND CLEAN
 router.get('/rooms/:roomId/guest', ({ params, inertia }) => {
   return inertia.render('guest-simple', { roomId: params.roomId })
 })

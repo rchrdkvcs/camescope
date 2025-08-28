@@ -14,7 +14,7 @@ export default class extends BaseSchema {
       table.integer('current_participants').defaultTo(0)
       table.integer('admin_id').unsigned().nullable()
       table.integer('current_layout_id').unsigned().nullable()
-      
+
       table.timestamp('scheduled_at').nullable()
       table.timestamp('started_at').nullable()
       table.timestamp('ended_at').nullable()

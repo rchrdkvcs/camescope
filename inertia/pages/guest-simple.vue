@@ -1,9 +1,9 @@
 <template>
   <div class="guest-page">
     <h1>🎥 Guest - Room {{ roomId }}</h1>
-    
+
     <div class="status">{{ status }}</div>
-    
+
     <div class="video-section">
       <video ref="video" autoplay muted playsinline></video>
       <div class="controls">
@@ -11,7 +11,7 @@
         <button @click="stop" :disabled="!streaming">Stop</button>
       </div>
     </div>
-    
+
     <div class="logs">
       <div v-for="log in logs" :key="log">{{ log }}</div>
     </div>
@@ -34,32 +34,30 @@ let stream = null
 function log(...args) {
   const msg = `[${new Date().toLocaleTimeString()}] ${args.join(' ')}`
   logs.value.push(msg)
-  console.log('[GUEST]', ...args)
 }
 
 async function start() {
   try {
     status.value = 'Getting camera...'
-    
-    stream = await navigator.mediaDevices.getUserMedia({ 
-      video: true, 
-      audio: true 
+
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true,
     })
     video.value.srcObject = stream
     log('Got media stream')
-    
+
     status.value = 'Connecting...'
     await mediasoup.init()
     await mediasoup.joinRoom(props.roomId)
     log('Connected to room')
-    
+
     status.value = 'Streaming...'
     await mediasoup.produce(stream)
     log('Started producing')
-    
+
     streaming.value = true
     status.value = '🔴 LIVE'
-    
   } catch (error) {
     status.value = 'Error: ' + error.message
     log('Error:', error.message)
@@ -68,10 +66,10 @@ async function start() {
 
 function stop() {
   if (stream) {
-    stream.getTracks().forEach(track => track.stop())
+    stream.getTracks().forEach((track) => track.stop())
     stream = null
   }
-  
+
   mediasoup.cleanup()
   streaming.value = false
   status.value = 'Stopped'
