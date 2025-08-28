@@ -9,5 +9,5 @@
       "~/*": ["./*"]
     }
   },
-  "include": ["./**/*.ts", "./**/*.vue"]
+  "include": ["./**/*.ts", "./**/*.vue", "../auto-imports.d.ts", "../components.d.ts"]
 }
