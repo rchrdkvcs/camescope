@@ -4,11 +4,11 @@ export const useQRCode = () => {
   const getImageUrl = async (text: string): Promise<string> => {
     try {
       return await QRCode.toDataURL(text, {
-        margin: 0,
+        margin: 2,
         scale: 10,
         color: {
-          dark: '#ffffff',
-          light: '#ffffff00',
+          dark: '#000',
+          light: '#fff',
         },
       })
     } catch (error) {

@@ -158,58 +158,72 @@ onBeforeUnmount(() => {
       />
     </div>
 
-    <div class="grid grid-cols-3 w-full gap-8">
-      <div class="col-span-2 flex flex-col items-center justify-center gap-4 w-full">
+    <div class="grid grid-cols-4 w-full gap-8">
+      <div class="col-span-3 flex flex-col items-center justify-center gap-4 w-full">
         <div
           v-if="!previewing && !streaming"
-          class="bg-elevated/50 rounded-lg w-full aspect-video flex flex-col items-center justify-center gap-6"
+          class="bg-elevated/50 rounded-lg w-full aspect-video flex flex-col items-center justify-center gap-8 ring-1 ring-default"
         >
-          <UIcon class="size-24 text-muted" name="lucide:baby" />
-          <p class="text-lg font-semibold">Souriez, Vous serez bientôt sur le grand ecran !</p>
+          <UIcon class="size-32 text-muted" name="lucide:baby" />
+          <div class="flex flex-col items-center justify-center gap-2">
+            <p class="text-lg font-semibold">Prêt pour votre moment de gloire ?</p>
+            <p class="text-muted">Activez votre caméra pour rejoindre la diffusion en direct</p>
+          </div>
         </div>
         <video
           ref="video"
           :class="previewing || streaming ? '' : 'hidden'"
           autoplay
-          class="w-full aspect-video rounded-lg"
+          class="w-full aspect-video rounded-lg ring-1 ring-default"
           muted
           playsinline
         ></video>
       </div>
 
-      <UCard class="size-full" variant="soft">
-        <template #header>
-          <h2 class="text-lg font-semibold">Rejoindre depuis un autre appareil</h2>
-        </template>
+      <div>
+        <UCard class="w-full h-fit" variant="subtle">
+          <template #header>
+            <h2 class="text-lg font-semibold">Rejoindre depuis mobile</h2>
+          </template>
 
-        <div class="flex flex-col gap-6 size-full">
-          <img
-            v-if="qrCodeUrl"
-            :src="qrCodeUrl"
-            alt="Generated QR Code"
-            class="w-full max-w-xs mx-auto aspect-square flex-1 rounded-lg"
-          />
-          <div
-            v-else
-            class="w-full max-w-xs mx-auto aspect-square flex-1 bg-elevated/50 rounded-lg flex items-center justify-center"
-          >
-            <UIcon class="size-12 text-muted animate-spin" name="lucide:loader-2" />
-          </div>
-
-          <UButtonGroup>
-            <UInput
-              :model-value="`camescope.com/r/${roomId}`"
-              class="w-full"
-              color="neutral"
-              icon="lucide:link"
-              readonly
-              size="lg"
-              variant="subtle"
+          <div class="flex flex-col gap-6 size-full">
+            <img
+              v-if="qrCodeUrl"
+              :src="qrCodeUrl"
+              alt="Generated QR Code"
+              class="w-3/4 mx-auto aspect-square flex-1 rounded-sm"
             />
-            <UButton color="primary" icon="i-lucide-clipboard" size="lg" />
-          </UButtonGroup>
-        </div>
-      </UCard>
+            <div
+              v-else
+              class="w-3/4 mx-auto aspect-square flex-1 rounded-sm bg-elevated/50 flex items-center justify-center"
+            >
+              <UIcon class="size-12 text-muted animate-spin" name="lucide:loader-2" />
+            </div>
+
+            <UButtonGroup>
+              <UInput
+                :model-value="`camescope.com/r/${roomId}`"
+                class="w-full"
+                color="neutral"
+                icon="lucide:link"
+                readonly
+                size="lg"
+                variant="subtle"
+              />
+              <UButton color="primary" icon="i-lucide-clipboard" size="lg" />
+            </UButtonGroup>
+          </div>
+        </UCard>
+
+        <UAlert
+          class="mt-8"
+          color="info"
+          description="Appuyez sur démarrer le partage pour commencer la diffusion. Vous pouvez aussi continuer depuis votre mobile en scannant le QR code ou en utilisant le lien."
+          icon="lucide:info"
+          title="Comment ça marche ?"
+          variant="subtle"
+        />
+      </div>
     </div>
 
     <div class="w-full flex justify-center gap-4">
