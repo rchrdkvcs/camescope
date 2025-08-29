@@ -1,11 +1,15 @@
 <script setup>
-import { ref, onBeforeUnmount } from 'vue'
+import { ref, onBeforeUnmount, onMounted } from 'vue'
 import mediasoup from '~/composables/use_mediasoup'
+import { useQRCode } from '~/composables/use_qrcode.js'
 
 const props = defineProps(['roomId'])
 
+const { getImageUrl } = useQRCode()
+const qrCodeUrl = ref('')
+
 const video = ref()
-const status = ref('Ready')
+const status = ref('ready')
 const streaming = ref(false)
 const previewing = ref(false)
 
@@ -30,10 +34,10 @@ async function getCamera() {
 
 async function preview() {
   try {
-    status.value = 'Getting camera...'
+    status.value = 'accessing camera'
     await getCamera()
     previewing.value = true
-    status.value = 'Preview'
+    status.value = 'previewing'
   } catch (error) {
     status.value = 'Error: ' + error.message
   }
@@ -42,23 +46,23 @@ async function preview() {
 async function start() {
   try {
     if (!stream) {
-      status.value = 'Getting camera...'
+      status.value = 'accessing camera'
       await getCamera()
     }
 
     previewing.value = true
-    status.value = 'Connecting...'
+    status.value = 'connecting'
 
     // Reset mediasoup state
     mediasoup.cleanup()
     await mediasoup.init()
     await mediasoup.joinRoom(props.roomId)
 
-    status.value = 'Streaming...'
+    status.value = 'starting streaming'
     await mediasoup.produce(stream)
 
     streaming.value = true
-    status.value = 'LIVE'
+    status.value = 'streaming'
   } catch (error) {
     status.value = 'Error: ' + error.message
   }
@@ -73,8 +77,63 @@ function stop() {
   mediasoup.cleanup()
   streaming.value = false
   previewing.value = false
-  status.value = 'Ready'
+  status.value = 'ready'
 }
+
+const getStatus = (status) => {
+  switch (status) {
+    case 'ready':
+      return {
+        icon: 'lucide:check',
+        label: 'Prêt à démarrer',
+        color: 'primary',
+      }
+    case 'accessing camera':
+      return {
+        icon: 'lucide:camera',
+        label: 'Accès à la caméra en cours...',
+        color: 'warning',
+      }
+    case 'previewing':
+      return {
+        icon: 'lucide:eye',
+        label: 'Aperçu du flux vidéo',
+        color: 'info',
+      }
+    case 'connecting':
+      return {
+        icon: 'lucide:activity',
+        label: 'Connexion au serveur...',
+        color: 'info',
+      }
+    case 'starting streaming':
+      return {
+        icon: 'lucide:video',
+        label: 'Démarrage du partage...',
+        color: 'info',
+      }
+    case 'streaming':
+      return {
+        icon: 'lucide:activity',
+        label: 'Diffusion en cours',
+        color: 'success',
+      }
+    default:
+      return {
+        icon: 'lucide:x',
+        label: 'Erreur',
+        color: 'danger',
+      }
+  }
+}
+
+onMounted(async () => {
+  try {
+    qrCodeUrl.value = await getImageUrl(`${window.origin}/rooms/${props.roomId}/guest`)
+  } catch (error) {
+    console.error('Erreur lors de la génération du QR code:', error)
+  }
+})
 
 onBeforeUnmount(() => {
   stop()
@@ -90,9 +149,10 @@ onBeforeUnmount(() => {
       </div>
 
       <UBadge
-        :label="status"
+        :color="getStatus(status).color"
+        :icon="getStatus(status).icon"
+        :label="getStatus(status).label"
         class="rounded-full"
-        icon="lucide:activity"
         size="xl"
         variant="subtle"
       />
@@ -123,17 +183,28 @@ onBeforeUnmount(() => {
         </template>
 
         <div class="flex flex-col gap-6 size-full">
-          <div class="bg-white w-full flex-1 min-h-48 rounded-lg"></div>
+          <img
+            v-if="qrCodeUrl"
+            :src="qrCodeUrl"
+            alt="Generated QR Code"
+            class="w-full max-w-xs mx-auto aspect-square flex-1 rounded-lg"
+          />
+          <div
+            v-else
+            class="w-full max-w-xs mx-auto aspect-square flex-1 bg-elevated/50 rounded-lg flex items-center justify-center"
+          >
+            <UIcon class="size-12 text-muted animate-spin" name="lucide:loader-2" />
+          </div>
 
           <UButtonGroup>
             <UInput
-              :model-value="`https://camescope.com/join/${roomId}`"
+              :model-value="`camescope.com/r/${roomId}`"
               class="w-full"
               color="neutral"
               icon="lucide:link"
               readonly
               size="lg"
-              variant="outline"
+              variant="subtle"
             />
             <UButton color="primary" icon="i-lucide-clipboard" size="lg" />
           </UButtonGroup>
