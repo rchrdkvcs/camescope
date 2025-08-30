@@ -85,6 +85,12 @@ class MediasoupService {
 
     // Get ICE servers from Cloudflare
     const iceServers = await cloudflareService.getIceServers()
+    
+    console.log('Transport created:', {
+      id: transport.id,
+      announcedIp: config.webRtcTransport.listenIps[0]?.announcedIp,
+      iceCandidates: transport.iceCandidates.length
+    })
 
     return {
       id: transport.id,
