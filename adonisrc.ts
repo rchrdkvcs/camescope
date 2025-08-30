@@ -112,10 +112,6 @@ export default defineConfig({
       pattern: 'public/**',
       reloadServer: false,
     },
-    {
-      pattern: 'node_modules/mediasoup/worker/**/*',
-      reloadServer: false,
-    },
   ],
 
   assetsBundler: false,
