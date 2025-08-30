@@ -1,4 +1,5 @@
 import { WorkerLogLevel, WorkerLogTag } from 'mediasoup/types'
+import env from '#start/env'
 
 export default {
   // Configuration Worker
@@ -78,7 +79,7 @@ export default {
     listenIps: [
       {
         ip: '0.0.0.0',
-        announcedIp: process.env.MEDIASOUP_ANNOUNCED_IP || '127.0.0.1',
+        announcedIp: env.get('MEDIASOUP_ANNOUNCED_IP'),
       },
     ],
     maxIncomingBitrate: 1500000,
