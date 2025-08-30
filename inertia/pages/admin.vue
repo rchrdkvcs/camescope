@@ -1,55 +1,3 @@
-<template>
-  <div class="admin-page">
-    <h1>⚙️ Admin Panel</h1>
-
-    <div class="status">{{ status }}</div>
-
-    <div class="current-program">
-      <h3>Current Program</h3>
-      <div class="program-display">
-        <strong>{{ currentProgram || 'None' }}</strong>
-        <button @click="stopProgram" v-if="currentProgram" class="stop-btn">Stop</button>
-      </div>
-    </div>
-
-    <div class="rooms-section">
-      <h3>Available Rooms</h3>
-      <div v-if="rooms.length === 0" class="no-rooms">
-        No active rooms found. Guests need to join first.
-      </div>
-      <div v-else class="rooms-list">
-        <div
-          v-for="room in rooms"
-          :key="room"
-          class="room-item"
-          :class="{ active: room === currentProgram }"
-        >
-          <div class="room-name">📺 Room: {{ room }}</div>
-          <button
-            @click="switchToRoom(room)"
-            :disabled="room === currentProgram"
-            class="switch-btn"
-          >
-            {{ room === currentProgram ? 'Current' : 'Switch To' }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="manual-switch">
-      <h3>Manual Program Switch</h3>
-      <div class="switch-controls">
-        <input v-model="manualRoom" placeholder="Enter room ID (e.g., room1)" class="room-input" />
-        <button @click="switchToManualRoom" :disabled="!manualRoom">Switch</button>
-      </div>
-    </div>
-
-    <div class="logs">
-      <div v-for="log in logs" :key="log">{{ log }}</div>
-    </div>
-  </div>
-</template>
-
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { socket } from '~/composables/use_socket'
@@ -145,159 +93,67 @@ onBeforeUnmount(() => {
 })
 </script>
 
-<style scoped>
-.admin-page {
-  padding: 20px;
-  max-width: 800px;
-  margin: 0 auto;
-}
+<template>
+  <UContainer class="h-screen max-h-screen overflow-hidden w-full flex flex-col gap-8 p-6">
+    <div class="flex flex-col w-full gap-4 flex-shrink-0">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-semibold">Sessions disponible</h2>
+        <UBadge :label="status" size="xl" variant="subtle" />
+      </div>
 
-h1 {
-  color: #333;
-  margin-bottom: 20px;
-}
+      <UAlert
+        v-if="rooms.length === 0"
+        color="warning"
+        description="No rooms available. Please wait for a program to start."
+        icon="lucide:x"
+        title="No rooms available"
+        variant="subtle"
+      />
 
-h3 {
-  margin: 20px 0 10px 0;
-  color: #555;
-}
+      <div v-else class="flex justify-start items-center gap-4 p-2 overflow-x-auto">
+        <div
+          v-for="room in rooms"
+          :key="room"
+          :class="currentProgram === room ? 'ring-2 ring-error' : 'ring-1 ring-default'"
+          class="bg-elevated/50 rounded-md p-3 flex flex-col gap-2 w-48 h-24 cursor-pointer hover:bg-elevated transition-all duration-250 ease-in-out"
+          @click="switchToRoom(room)"
+        >
+          <div class="flex flex-col">
+            <p class="text-sm text-muted">Sessions</p>
+            <p>{{ room }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
 
-.status {
-  background: #f0f0f0;
-  padding: 10px;
-  border-radius: 5px;
-  margin-bottom: 20px;
-  font-weight: bold;
-}
+    <div class="flex flex-col w-full gap-4 flex-1 min-h-0 overflow-auto">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-semibold">Programme courant</h2>
+        <UButton
+          v-if="currentProgram"
+          color="error"
+          icon="lucide:x"
+          label="Arrêter la diffusion"
+          @click="stopProgram"
+        />
+      </div>
 
-.current-program {
-  background: #e8f4f8;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
+      <UAlert
+        v-if="!currentProgram"
+        color="warning"
+        description="No program is currently being broadcasted."
+        icon="lucide:x"
+        title="No program"
+        variant="subtle"
+      />
 
-.program-display {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.stop-btn {
-  background: #dc3545;
-  color: white;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.stop-btn:hover {
-  background: #c82333;
-}
-
-.rooms-section {
-  background: #f8f9fa;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-.no-rooms {
-  color: #666;
-  font-style: italic;
-  padding: 10px;
-}
-
-.rooms-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.room-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  background: white;
-}
-
-.room-item.active {
-  border-color: #007bff;
-  background: #e3f2fd;
-}
-
-.room-name {
-  font-weight: 500;
-}
-
-.switch-btn {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.switch-btn:disabled {
-  background: #6c757d;
-  cursor: not-allowed;
-}
-
-.switch-btn:not(:disabled):hover {
-  background: #0056b3;
-}
-
-.manual-switch {
-  background: #fff3cd;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-.switch-controls {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.room-input {
-  flex: 1;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-button {
-  padding: 8px 15px;
-  background: #28a745;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-button:disabled {
-  background: #6c757d;
-  cursor: not-allowed;
-}
-
-button:not(:disabled):hover {
-  opacity: 0.9;
-}
-
-.logs {
-  background: #f8f9fa;
-  padding: 15px;
-  border-radius: 5px;
-  max-height: 200px;
-  overflow-y: auto;
-  font-family: monospace;
-  font-size: 11px;
-  line-height: 1.3;
-}
-</style>
+      <div class="flex flex-col gap-4 min-h-0 p-2">
+        <div
+          class="size-full aspect-video bg-elevated/50 ring-1 ring-default rounded-lg flex items-center justify-center"
+        >
+          <span class="text-xl font-medium">{{ currentProgram }}</span>
+        </div>
+      </div>
+    </div>
+  </UContainer>
+</template>
