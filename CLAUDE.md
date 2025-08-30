@@ -87,3 +87,4 @@ Frontend uses Vite alias: `~/` → `./inertia/`
 The application manages multiple guest connections per room with dynamic program switching controlled by admin panel.
 
 - Je lance toujours le serveur de developpement a la main
+- Jamais lancer le serveur de dev

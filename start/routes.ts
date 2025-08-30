@@ -17,6 +17,10 @@ router.get('/obs', ({ inertia }) => {
   return inertia.render('obs')
 })
 
+router.get('/program', ({ inertia }) => {
+  return inertia.render('obs/five-left')
+})
+
 router.get('/admin', ({ inertia }) => {
   return inertia.render('admin')
 })

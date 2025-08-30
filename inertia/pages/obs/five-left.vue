@@ -109,28 +109,24 @@ onBeforeUnmount(() => {
   log('OBS cleanup done')
 })
 
-const leftGroup = computed(() => {
+const cams = computed(() => {
   return Object.entries(streams.value).slice(0, 5)
-})
-
-const rightGroup = computed(() => {
-  return Object.entries(streams.value).slice(5, 10)
 })
 </script>
 
 <template>
   <div class="relative h-screen w-full">
-    <!-- Bottom left group (5 cameras) -->
-    <div class="absolute bottom-4 left-4 flex gap-2">
+    <!-- Left side group (5 cameras) -->
+    <div class="absolute top-1/2 left-4 flex flex-col gap-6 -translate-y-1/2">
       <div
-        v-for="([producerId, streamData], idx) in leftGroup"
+        v-for="([producerId, streamData], idx) in cams"
         :key="'left-' + producerId"
         class="relative"
       >
         <video
           :ref="(el) => setVideoRef(producerId, el)"
           autoplay
-          class="w-64 aspect-video rounded-md object-cover"
+          class="w-52 aspect-video rounded-sm object-cover"
           muted
           playsinline
         ></video>
@@ -138,29 +134,7 @@ const rightGroup = computed(() => {
           :label="producerId.slice(0, 8)"
           class="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2"
           color="neutral"
-          variant="soft"
-        />
-      </div>
-    </div>
-
-    <!-- Bottom right group (5 cameras) -->
-    <div class="absolute bottom-4 right-4 flex gap-2">
-      <div
-        v-for="([producerId, streamData], idx) in rightGroup"
-        :key="'right-' + producerId"
-        class="relative"
-      >
-        <video
-          :ref="(el) => setVideoRef(producerId, el)"
-          autoplay
-          class="w-64 aspect-video rounded-md object-cover"
-          muted
-          playsinline
-        ></video>
-        <UBadge
-          :label="producerId.slice(0, 8)"
-          class="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2"
-          color="neutral"
+          size="sm"
           variant="soft"
         />
       </div>

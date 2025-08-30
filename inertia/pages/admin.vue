@@ -5,91 +5,53 @@ import { socket } from '~/composables/use_socket'
 const status = ref('Connecting...')
 const currentProgram = ref(null)
 const rooms = ref([])
-const manualRoom = ref('')
-const logs = ref([])
-
-function log(...args) {
-  const msg = `[${new Date().toLocaleTimeString()}] ${args.join(' ')}`
-  logs.value.push(msg)
-}
 
 function switchToRoom(roomId) {
   socket.emit('switchProgram', roomId)
-  log('Switching to room:', roomId)
-}
-
-function switchToManualRoom() {
-  if (manualRoom.value.trim()) {
-    socket.emit('switchProgram', manualRoom.value.trim())
-    log('Manual switch to room:', manualRoom.value.trim())
-    manualRoom.value = ''
-  }
 }
 
 function stopProgram() {
   socket.emit('switchProgram', null)
-  log('Stopping current program')
 }
 
 // Socket event handlers
 function handleConnect() {
   status.value = 'Connected'
-  log('Admin connected')
-
-  // Join as admin
   socket.emit('joinAdmin')
 }
 
 function handleRoomsList(data) {
   rooms.value = data.rooms || []
   currentProgram.value = data.currentProgram
-  log('Rooms list received:', rooms.value)
 }
 
 function handleProgramSwitched(data) {
   currentProgram.value = data.roomId
   status.value = data.roomId ? `Broadcasting: ${data.roomId}` : 'No program'
-  log('Program switched to:', data.roomId)
 }
 
 function handleProducerAdded(data) {
-  log('New producer:', data.producerId, 'in room:', data.roomId)
-
-  // Update rooms list if new room
   if (!rooms.value.includes(data.roomId)) {
     rooms.value.push(data.roomId)
   }
 }
 
-function handlePeerDisconnected(data) {
-  log('Peer disconnected from room:', data.roomId)
-}
-
 onMounted(() => {
-  log('Admin page loaded')
-
-  // Setup socket listeners
   socket.on('connect', handleConnect)
   socket.on('roomsList', handleRoomsList)
   socket.on('programSwitched', handleProgramSwitched)
   socket.on('producerAdded', handleProducerAdded)
-  socket.on('peerDisconnected', handlePeerDisconnected)
 
-  // Connect if not already
   if (socket.connected) {
     handleConnect()
   }
 })
 
 onBeforeUnmount(() => {
-  // Remove listeners
   socket.off('connect', handleConnect)
   socket.off('roomsList', handleRoomsList)
   socket.off('programSwitched', handleProgramSwitched)
   socket.off('producerAdded', handleProducerAdded)
-  socket.off('peerDisconnected', handlePeerDisconnected)
-
-  log('Admin cleanup done')
 })
 </script>
 
@@ -149,6 +111,7 @@ onBeforeUnmount(() => {
 
       <div class="flex flex-col gap-4 min-h-0 p-2">
         <div
+          v-if="currentProgram"
           class="size-full aspect-video bg-elevated/50 ring-1 ring-default rounded-lg flex items-center justify-center"
         >
           <span class="text-xl font-medium">{{ currentProgram }}</span>
