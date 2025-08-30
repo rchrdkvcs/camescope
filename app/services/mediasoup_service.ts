@@ -1,6 +1,6 @@
 import { createWorker, types as mediasoupTypes } from 'mediasoup'
 import config from '#config/mediasoup'
-import { Logger } from '@adonisjs/core/logger'
+import cloudflareService from '#services/cloudflare_service'
 
 interface RoomData {
   router: mediasoupTypes.Router
@@ -19,7 +19,6 @@ class MediasoupService {
   private worker: mediasoupTypes.Worker | null = null
   private rooms = new Map<string, RoomData>()
   private transports = new Map<string, TransportData>()
-  private logger = new Logger({ level: 'info', name: 'mediasoup' })
 
   async initialize(): Promise<void> {
     if (this.worker) return
@@ -33,13 +32,9 @@ class MediasoupService {
       })
 
       this.worker.on('died', (error) => {
-        this.logger.error('mediasoup Worker died unexpectedly:', error)
-        process.exit(1)
+        throw error
       })
-
-      this.logger.info(`✅ mediasoup Worker created, PID: ${this.worker.pid}`)
     } catch (error) {
-      this.logger.error('❌ Failed to create mediasoup worker:', error)
       throw error
     }
   }
@@ -67,7 +62,6 @@ class MediasoupService {
     }
 
     this.rooms.set(roomId, room)
-    this.logger.info(`✅ Room created: ${roomId}`)
 
     return room
   }
@@ -80,29 +74,24 @@ class MediasoupService {
       appData: { socketId, roomId },
     })
 
-    transport.on('dtlsstatechange', (dtlsState) => {
-      if (dtlsState === 'failed' || dtlsState === 'closed') {
-        this.logger.warn(`Transport DTLS state changed to ${dtlsState}`)
-      }
-    })
-
     transport.on('@close', () => {
       this.transports.delete(transport.id)
       room.transports.delete(transport.id)
-      this.logger.debug(`Transport closed: ${transport.id}`)
     })
 
     // Store transport (allow multiple transports per socket)
     room.transports.set(transport.id, transport)
     this.transports.set(transport.id, { transport, socketId, roomId })
 
-    this.logger.info(`🚚 WebRTC transport created: ${transport.id}`)
+    // Get ICE servers from Cloudflare
+    const iceServers = await cloudflareService.getIceServers()
 
     return {
       id: transport.id,
       iceParameters: transport.iceParameters,
       iceCandidates: transport.iceCandidates,
       dtlsParameters: transport.dtlsParameters,
+      iceServers,
     }
   }
 
@@ -113,7 +102,6 @@ class MediasoupService {
     }
 
     await transportData.transport.connect({ dtlsParameters })
-    this.logger.info(`✅ Transport connected: ${transportId}`)
   }
 
   async produce(
@@ -141,8 +129,6 @@ class MediasoupService {
     })
 
     room.producers.set(producer.id, producer)
-
-    this.logger.info(`🎬 Producer created: ${producer.id} (${kind})`)
 
     return producer.id
   }
@@ -205,8 +191,6 @@ class MediasoupService {
     const room = this.rooms.get(roomId)!
     room.consumers.set(consumer.id, consumer)
 
-    this.logger.info(`🍿 Consumer created: ${consumer.id}`)
-
     return {
       id: consumer.id,
       producerId: consumer.producerId,
@@ -220,7 +204,6 @@ class MediasoupService {
       const consumer = room.consumers.get(consumerId)
       if (consumer) {
         await consumer.pause()
-        this.logger.info(`⏸️ Consumer paused: ${consumerId}`)
         return
       }
     }
@@ -232,7 +215,6 @@ class MediasoupService {
       const consumer = room.consumers.get(consumerId)
       if (consumer) {
         await consumer.resume()
-        this.logger.info(`▶️ Consumer resumed: ${consumerId}`)
         return
       }
     }
@@ -257,8 +239,6 @@ class MediasoupService {
       if (room) {
         room.transports.delete(transportId)
       }
-
-      this.logger.info(`🧹 Transport ${transportId} cleaned up for socket: ${socketId}`)
     }
   }
 
@@ -305,18 +285,14 @@ class MediasoupService {
   }
 
   async shutdown() {
-    this.logger.info('🔴 Shutting down mediasoup service...')
-
     // Close all rooms
-    for (const [roomId, room] of this.rooms) {
+    for (const [, room] of this.rooms) {
       room.router.close()
-      this.logger.info(`Room closed: ${roomId}`)
     }
 
     // Close worker
     if (this.worker) {
       this.worker.close()
-      this.logger.info('Worker closed')
     }
 
     this.rooms.clear()

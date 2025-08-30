@@ -16,7 +16,6 @@ export default await Env.create(new URL('../', import.meta.url), {
   PORT: Env.schema.number(),
   APP_KEY: Env.schema.string(),
   HOST: Env.schema.string({ format: 'host' }),
-  MEDIASOUP_ANNOUNCED_IP: Env.schema.string({ format: 'host' }),
   LOG_LEVEL: Env.schema.string(),
 
   /*
@@ -36,4 +35,13 @@ export default await Env.create(new URL('../', import.meta.url), {
   DB_USER: Env.schema.string(),
   DB_PASSWORD: Env.schema.string.optional(),
   DB_DATABASE: Env.schema.string(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for configuring mediasoup
+  |----------------------------------------------------------
+  */
+  MEDIASOUP_ANNOUNCED_IP: Env.schema.string({ format: 'host' }),
+  CLOUDFLARE_TURN_KEY_ID: Env.schema.string(),
+  CLOUDFLARE_API_TOKEN: Env.schema.string(),
 })

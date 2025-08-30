@@ -39,6 +39,7 @@ async function preview() {
     previewing.value = true
     status.value = 'previewing'
   } catch (error) {
+    console.log(error)
     status.value = 'Error: ' + error.message
   }
 }
@@ -64,6 +65,7 @@ async function start() {
     streaming.value = true
     status.value = 'streaming'
   } catch (error) {
+    console.log(error)
     status.value = 'Error: ' + error.message
   }
 }
