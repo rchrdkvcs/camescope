@@ -1,20 +1,16 @@
-FROM node:latest AS base
-
-# Install bun
-WORKDIR /app
-RUN npm install -g bun@latest
+FROM node:24-alpine AS base
 
 # All deps stage
 FROM base AS deps
 WORKDIR /app
 ADD package.json ./
-RUN bun install
+RUN npm install
 
 # Production only
 FROM base AS production-deps
 WORKDIR /app
 ADD package.json ./
-RUN bun install --production
+RUN npm install --production
 
 # Build stage
 FROM base AS build
