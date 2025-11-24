@@ -1,64 +1,72 @@
-# 1. Utiliser une version STABLE (LTS) de Node.
-# 'bookworm' est bien car c'est une Debian stable pour compiler Mediasoup.
-FROM node:22-bookworm AS base
+# ==========================================
+# BASE : Image officielle Bun
+# ==========================================
+FROM oven/bun:1 AS base
+WORKDIR /app
 
-# --- Deps Stage (Toutes les dépendances) ---
+# ==========================================
+# DEPS : Installation des dépendances (Dev + Prod)
+# ==========================================
 FROM base AS deps
 
-# Installation des outils pour compiler le C++ (Mediasoup)
+# Installation de Python et G++ (Obligatoire pour compiler Mediasoup)
 RUN apt-get update && apt-get install -y \
     python3 \
-    python3-pip \
     make \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+COPY package.json bun.lock ./
 
-# 2. IMPORTANT : Copier aussi le package-lock.json !
-COPY package*.json ./
+# Installation rapide avec Bun
+RUN bun install --frozen-lockfile
 
-# Installation complète (dev + prod) pour avoir typescript, ace, etc.
-RUN npm install
+# ==========================================
+# BUILD : Compilation AdonisJS (TS -> JS)
+# ==========================================
+FROM base AS build
 
-# --- Production Deps Stage (Uniquement pour le run) ---
+# On récupère les node_modules de l'étape deps
+COPY --from=deps /app/node_modules /app/node_modules
+COPY . .
+
+# Build du projet
+# Bun exécute le script "build" du package.json (souvent "node ace build")
+# On force l'utilisation de bun pour exécuter ace
+RUN bun run ace build
+
+# ==========================================
+# PROD DEPS : Dépendances de production uniquement
+# ==========================================
 FROM base AS production-deps
 
+# On a encore besoin des outils de compil pour Mediasoup ici !
 RUN apt-get update && apt-get install -y \
     python3 \
-    python3-pip \
     make \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
-COPY package*.json ./
-RUN npm install --production
+COPY package.json bun.lock ./
 
-# --- Build Stage ---
-FROM base AS build
-WORKDIR /app
+# --production évite d'installer typescript, eslint, etc.
+RUN bun install --frozen-lockfile --production
 
-# On récupère les node_modules COMPLETS (avec devDeps) de l'étape deps
-COPY --from=deps /app/node_modules /app/node_modules
+# ==========================================
+# FINAL : L'image qui part en prod
+# ==========================================
+FROM base AS final
+ENV NODE_ENV=production
 
-# On copie le code source
-ADD . .
-
-# 3. Le build devrait fonctionner maintenant grâce à Node 22
-RUN node ace build --ignore-ts-errors
-
-# --- Final Stage ---
-FROM base
-WORKDIR /app
-
-# On récupère les dépendances de PROD (plus légères)
+# Copie des modules de prod (contenant le binaire mediasoup compilé)
 COPY --from=production-deps /app/node_modules /app/node_modules
-# On récupère le build compilé
+
+# Copie du dossier build généré
 COPY --from=build /app/build /app
 
+# Ports
 EXPOSE 3333
-# Plage de ports Mediasoup
 EXPOSE 10000-10100/udp
 
-CMD ["node", "./bin/server.js"]
+# Démarrage avec Bun directement (plus rapide que Node)
+CMD ["bun", "run", "bin/server.js"]
