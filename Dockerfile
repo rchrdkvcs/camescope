@@ -1,72 +1,65 @@
 # ==========================================
-# BASE : Image officielle Bun
+# BASE
 # ==========================================
 FROM oven/bun:1 AS base
 WORKDIR /app
 
 # ==========================================
-# DEPS : Installation des dépendances (Dev + Prod)
+# DEPS (Dev + Build tools)
 # ==========================================
 FROM base AS deps
-
-# Installation de Python et G++ (Obligatoire pour compiler Mediasoup)
-RUN apt-get update && apt-get install -y \
-    python3 \
-    make \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY package.json bun.lock ./
-
-# Installation rapide avec Bun
+RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
+COPY package.json bun.lockb ./
 RUN bun install --frozen-lockfile
 
 # ==========================================
-# BUILD : Compilation AdonisJS (TS -> JS)
+# BUILD (TypeScript -> JS)
 # ==========================================
 FROM base AS build
-
-# On récupère les node_modules de l'étape deps
 COPY --from=deps /app/node_modules /app/node_modules
 COPY . .
-
-# Build du projet
-# Bun exécute le script "build" du package.json (souvent "node ace build")
-# On force l'utilisation de bun pour exécuter ace
 RUN bun run ace build
 
 # ==========================================
-# PROD DEPS : Dépendances de production uniquement
+# PROD DEPS (Le coeur du problème est ici)
 # ==========================================
 FROM base AS production-deps
 
-# On a encore besoin des outils de compil pour Mediasoup ici !
+# 1. On garde les outils de compilation
 RUN apt-get update && apt-get install -y \
     python3 \
     make \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-COPY package.json bun.lock ./
+COPY package.json bun.lockb ./
 
-# --production évite d'installer typescript, eslint, etc.
+# 2. On installe les paquets
 RUN bun install --frozen-lockfile --production
 
+# -----------------------------------------------------------
+# LE FIX EST ICI : On force la compilation manuelle de Mediasoup
+# -----------------------------------------------------------
+WORKDIR /app/node_modules/mediasoup
+# On configure le build (équivalent du npm install qui ne s'est pas lancé)
+RUN python3 worker/scripts/configure.py -R Release
+# On compile (crée le fichier mediasoup-worker)
+RUN make -C worker/out/Release/ -j$(nproc)
+# On revient au dossier racine
+WORKDIR /app
+# -----------------------------------------------------------
+
 # ==========================================
-# FINAL : L'image qui part en prod
+# FINAL
 # ==========================================
 FROM base AS final
 ENV NODE_ENV=production
 
-# Copie des modules de prod (contenant le binaire mediasoup compilé)
+# On copie les modules (qui contiennent maintenant le binaire compilé !)
 COPY --from=production-deps /app/node_modules /app/node_modules
-
-# Copie du dossier build généré
 COPY --from=build /app/build /app
 
-# Ports
 EXPOSE 3333
 EXPOSE 10000-10100/udp
 
-# Démarrage avec Bun directement (plus rapide que Node)
 CMD ["bun", "run", "bin/server.js"]
