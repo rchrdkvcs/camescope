@@ -42,7 +42,7 @@
     "@japa/runner": "^4.4.0",
     "@swc/core": "1.11.24",
     "@types/luxon": "^3.7.1",
-    "@types/node": "^22.19.1",
+    "@types/node": "^25.0.0",
     "@types/qrcode": "^1.5.6",
     "@vitejs/plugin-vue": "^6.0.2",
     "pino-pretty": "^13.1.2",
